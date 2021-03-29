@@ -30,16 +30,16 @@
 //! 
 //! ```rust
 //! use te::TextExpression;
-//! let expr = TextExpression::new("numeric and length 5").unwrap();
-//! assert!(expr.is_match("12345"));
+//! let expr = TextExpression::new(&"numeric and length 5".to_owned()).unwrap();
+//! assert!(expr.is_match_str("12345"));
 //! ```
 //! 
 //! ## Naive email addresses
 //! 
 //! ```rust
 //! use te::TextExpression;
-//! let expr = TextExpression::new("contains \"@\" and contains \".com\"").unwrap();
-//! assert!(expr.is_match("foo@baz.com"));
+//! let expr = TextExpression::new(&"contains \"@\" and contains \".com\"".to_owned()).unwrap();
+//! assert!(expr.is_match_str("foo@baz.com"));
 //! ```
 //! 
 //! ## Compiling a text expression only once
@@ -55,7 +55,7 @@
 //! 
 //! fn utility(text: &str) -> bool {
 //! 	lazy_static! {
-//! 		static ref TE: TextExpression = TextExpression::new("...").unwrap();
+//! 		static ref TE: TextExpression = TextExpression::new(&"...".to_owned()).unwrap();
 //! 	}
 //! 
 //! 	TE.is_match(text)
@@ -99,13 +99,45 @@ mod query;
 mod runtime;
 
 use error::TextExpressionResult;
+use runtime::Runtime;
 
 
-pub use runtime::run;
-
-pub fn into_ast(source: &String) -> TextExpressionResult<parser::AST> {
+fn into_ast(source: &String) -> TextExpressionResult<parser::AST> {
 	let tokens = lexer::lex(source)?;
 	let ast = parser::parse(tokens)?;
 
 	Ok(ast)
+}
+
+pub struct TextExpression {
+	runtime: Runtime
+}
+
+impl TextExpression {
+
+	pub fn new(source: &String) -> TextExpressionResult<Self> {
+		let ast = into_ast(source.into())?;
+		let runtime = Runtime::new(ast);
+
+		Ok(Self {
+			runtime
+		})
+	}
+
+	pub fn is_match(&self, input: &String) -> bool {
+		self.runtime.run(input)
+	}
+
+	pub fn is_match_str(&self, input: &str) -> bool {
+		self.runtime.run(&input.to_string())
+	}
+
+}
+
+#[cfg(feature = "lazy")]
+#[macro_export]
+macro_rules! lazy_text_expr {
+	() => {
+		
+	};
 }
