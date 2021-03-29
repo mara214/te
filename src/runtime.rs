@@ -2,7 +2,7 @@ use crate::parser::AST;
 use crate::logical_operator::LogicalOperator;
 
 
-struct Runtime {
+pub struct Runtime {
 	ast: AST
 }
 
